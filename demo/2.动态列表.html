@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QUnit Example</title>
+</head>
+<body>
+  <h1>成员列表<span id="length"></span></h1>
+  
+  <button id="btn">加载数据</button>
+  <button id="add">加一条</button>
+  <ul id="list"></ul>
+  <script src="../src/model.js"></script>
+  <script>
+    var m = new k();
+  	var model = m.model({arr:[]});
+
+    var ul = document.getElementById('list');
+    var btn = document.getElementById('btn');
+    var length = document.getElementById('length');
+    model.watch("arr", function (arr) {
+      
+    });
+
+    model.arr.on("change", function () {
+      var tpl = "<li>{{name}}</li>";
+      var str = "";
+      for (var i = 0; i < model.arr.length; i++) {
+        str += tpl.replace(/{{name}}/gi, model.arr[i].name);
+      };
+      ul.innerHTML = str;
+      length.innerHTML = model.arr.length;
+    })
+
+    btn.onclick = function () {
+      model.arr = [
+        {
+          name: "1呵呵"
+        },
+        {
+          name: "2呵呵"
+        },
+        {
+          name: "3呵呵"
+        },
+        {
+          name: "4呵呵"
+        },
+        {
+          name: "5呵呵"
+        },
+        {
+          name: "6呵呵"
+        }
+      ]
+    }
+
+    // 增加
+    document.getElementById('add').onclick = function () {
+      model.arr.push({name: model.arr.length + 1 + "呵呵"})
+    }
+
+  </script>
+</body>
+</html>

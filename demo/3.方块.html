@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QUnit Example</title>
+  <style>
+  .wrap{
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+    border: 1px solid red;
+    overflow: hidden;
+  }
+  #wrap{
+    position: relative;
+    -webkit-transition:top 200ms ease;
+  }
+  .test{
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    width: 50px;
+    height: 50px;
+    background: black;
+  }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="wrap"></div>
+  </div>
+  <script src="../src/model.js"></script>
+  <script>
+  var m = new k();
+    var height = 50;
+    var width = 50;
+    var offset = 0;
+    var model = m.model({
+      offset: 0,
+      arr:[]
+    });
+  var view = {
+    tpl: "<div class='test'></div>",
+    doms: [],
+    wrap: document.getElementById('wrap'),
+    model : model,
+    binding: [],
+    render: function () {
+      var arr = this.model.arr;
+      
+      for (var i = 0; i < arr.length; i++) {
+        if (!this.binding[i]) {
+          this.binding[i] = arr[i];
+        };
+        if (!this.doms[i]) {
+          this.doms[i] = document.createElement("div");
+          this.doms[i].className = "test";
+          this.doms[i].style.left = arr[i].left + "px";
+          this.doms[i].style.top = 150 - i * height + "px";
+          var _this = this;
+        };
+        this.wrap.appendChild(this.doms[i]);
+
+
+      }
+      console.log(this.model.offset)
+      this.wrap.style.top = this.model.offset + "px";
+    }
+  }
+
+  document.onclick = function () {
+    view.model.offset += 50;
+            add()
+  }
+ 
+
+  model.arr.on("change", function () {
+    view.render();
+  })
+  add()
+  add()
+  add()
+  add()
+  function add () {
+    if (model.arr.length>8) {
+      model.arr.shift();
+    };
+    console.log(model.arr[0])
+    console.log(model.arr.push({
+      left : Math.floor(Math.random() * 4) * width
+    }));
+  }
+   
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QUnit Example</title>
+  <link rel="stylesheet" href="qunit-1.14.0.css">
+</head>
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="qunit-1.14.0.js"></script>
+  <script src="../src/model.js"></script>
+  <script>
+  var modelkey = '__model_data__';
+	  	test( "{a:1}=>model", function() {
+	  		var m = new k();
+	  		var model = m.model({
+	  			a : 1
+	  		});
+			ok( model.a === 1, "Passed!" );
+		});
+  test( "{arr:[1,2,3]=>model", function() {
+      var m = new k();
+      var model = m.model({
+        arr: [1,2,3]
+      });
+      ok( model.arr.length === 3, "length ok" + model.arr.length );
+      ok( model.arr[0] === 1&& model.arr[1] === 2&&model.arr[2] === 3, "数据ok" );
+      ok( !('3' in model.arr), "数据ok" );
+  });
+
+	test( "{a:{b:c:{}}}=>model,深度model", function() {
+  		var m = new k();
+  		var model = m.model({
+  			a : {
+  				b : {
+  					c : {}
+  				}
+  			}
+  		});
+		ok( !!model.a.b[modelkey], "Passed!" );
+	});
+
+	test( "{a:{b:c:{}}}=>model,浅度model", function() {
+  		var m = new k();
+  		var model = m.model({
+  			a : {
+  				b : {
+  					c : {}
+  				}
+  			}
+  		}, false);
+		ok( !model.a.b[modelkey], "Passed!" );
+	});
+
+	test( "{a:1}=>{a:2},设置", function() {
+  		var m = new k();
+  		var model = m.model({
+  			a : 1
+  		});
+      window.b=model
+  		model.a = 2;
+		ok( model.a === 2, "Passed!" );
+	});
+
+	test( "{a:1}=>{a:{b:1}},设置", function() {
+  		var m = new k();
+  		var model = m.model({
+  			a : 1
+  		});
+  		model.a = {b:1};
+		ok( model.a.b === 1, "model.a.b: "+ model.a.b );
+		ok( !!model.a[modelkey], "model.a[modelkey]是否存在: "+ !!model.a[modelkey] );
+		console.log(model.a)
+	});
+
+	test( "{a:1}=>{a:{b:{c:1}}},设置的深度model测试", function() {
+  		var m = new k();
+  		var model = m.model({
+  			a : 1
+  		});
+  		model.a = {b:{c:1}};
+
+		ok( model.a.b.c === 1, "model.a.b.c: "+ model.a.b.c );
+		ok( !model.a.b[modelkey], "model.a.b[modelkey]是否存在: "+ !!model.a.b[modelkey] );
+		ok( 1==1 , "建议：从基本数据类型到复杂数据类型转换，是会导致无法深度转换为model，建议每个键的数据类型都要不变");
+		console.log(model.a.b)
+	});
+
+	module("watch");
+	test( "{a:1}-watch('a')", function() {
+  		var m = new k();
+  		var model = m.model({
+  			a : 1
+  		});
+  		var x = -1;
+  		model.watch('a', function (newval, oldval) {
+  			x = newval;
+  			start();
+  			ok(x === 2, "watch ok:" + x);
+  		});
+  		model.a = 2;
+  		ok(model.a === 2, "model.a ok");
+  		stop();
+  		
+	});
+
+	test( "多个model的关联watch,有循环watch", function() {
+  		var m = new k();
+  		var model1 = m.model({
+  			a : 1
+  		});
+
+  		var model2 = m.model({
+  			b : 2
+  		});
+
+  		var model3 = m.model({
+  			c : 3
+  		});
+  		model1.watch('a', function (newval, oldval) {
+  			model2.b = newval;
+  		});
+
+  		model2.watch('b', function (newval, oldval) {
+  			model3.c = newval;
+  		});
+
+  		model3.watch('c', function (newval, oldval) {
+  			model1.a = newval;
+  		});
+
+  		model1.a = 6;
+
+  		ok(model1.a === 6, "model1 ok");
+  		stop();
+  		// 由于watch事件的nextTick触发，必须等会再去取值，否则会取到oldval
+  		setTimeout(function () {
+	  		ok(model2.b === 6, "model2 ok");
+	  		setTimeout(function () {
+	  			start();
+	  			ok(model3.c === 6, "model3 ok");
+	  		});
+  		},0)
+	  		
+	});
+
+	module("数组方法");
+	test("[1,2,3,4,5].splice(0, 1)",function () {
+		var m = new k();
+  		var model = m.model({
+  			arr: [1,2,3,4,5]
+  		});
+  		var newarr = model.arr.splice(0, 1);
+
+      // return;
+  		ok(model.arr.length === 4, "length ok:" + model.arr.length);
+  		ok(!('4' in model.arr), "多余内容删除成功");
+  		ok(model.arr[0] === 2 && model.arr[1] === 3 && model.arr[2] === 4 && model.arr[3] === 5 ,
+  			 "数组内容正确");
+  		ok(newarr.length === 1 && newarr[0] === 1, "返回正确" );
+	})
+
+	test("[1,2,3,4,5].splice(1, 1)",function () {
+		var m = new k();
+  		var model = m.model({
+  			arr: [1,2,3,4,5]
+  		});
+  		var newarr = model.arr.splice(1, 1);
+  		ok(model.arr.length === 4, "length ok:" + model.arr.length);
+  		ok(!('4' in model.arr), "多余内容删除成功");
+  		ok(model.arr[0] === 1 && model.arr[1] === 3 && model.arr[2] === 4 && model.arr[3] === 5 ,
+  			 "数组内容正确");
+  		ok(newarr.length === 1 && newarr[0] === 2, "返回正确" );
+	});
+
+	test("[1,2,3,4,5].splice(4, 1)",function () {
+		var m = new k();
+  		var model = m.model({
+  			arr: [1,2,3,4,5]
+  		});
+  		var newarr = model.arr.splice(4, 1);
+
+  		ok(model.arr.length === 4, "length ok:" + model.arr.length);
+  		ok(!('4' in model.arr), "多余内容删除成功");
+  		ok(model.arr[0] === 1 && model.arr[1] === 2 && model.arr[2] === 3 && model.arr[3] === 4 ,
+  			 "数组内容正确");
+  		ok(newarr.length === 1 && newarr[0] === 5, "返回正确" );
+	})
+
+	test("[1,2,3,4,5].splice(-1, 1)",function () {
+		var m = new k();
+  		var model = m.model({
+  			arr: [1,2,3,4,5]
+  		});
+  		var newarr = model.arr.splice(-1, 1);
+
+  		ok(model.arr.length === 4, "length ok:" + model.arr.length);
+  		ok(!('4' in model.arr), "多余内容删除成功");
+  		ok(model.arr[0] === 1 && model.arr[1] === 2 && model.arr[2] === 3 && model.arr[3] === 4 ,
+  			 "数组内容正确");
+  		ok(newarr.length === 1 && newarr[0] === 5, "返回正确" );
+	})
+
+	test("[1,2,3,4,5].splice(-12, 1)",function () {
+		var m = new k();
+  		var model = m.model({
+  			arr: [1,2,3,4,5]
+  		});
+  		var newarr = model.arr.splice(-12, 1);
+
+  		ok(model.arr.length === 4, "length ok:" + model.arr.length);
+  		ok(!('4' in model.arr), "多余内容删除成功");
+  		ok(model.arr[0] === 2 && model.arr[1] === 3 && model.arr[2] === 4 && model.arr[3] === 5 ,
+  			 "数组内容正确");
+  		ok(newarr.length === 1 && newarr[0] === 1, "返回正确" );
+	})
+
+	test("[1,2,3,4,5].splice(6, 1)",function () {
+		var m = new k();
+  		var model = m.model({
+  			arr: [1,2,3,4,5]
+  		});
+  		var newarr = model.arr.splice(6, 1);
+
+  		ok(model.arr.length === 5, "length ok:" + model.arr.length);
+  		ok(model.arr[0] === 1 && model.arr[1] === 2 && model.arr[2] === 3 && model.arr[3] === 4
+  			&& model.arr[4] === 5 , "数组内容正确");
+  		ok(newarr.length === 0 && !("0" in newarr), "返回正确" );
+	})
+
+	
+  </script>
+</body>
+</html>
